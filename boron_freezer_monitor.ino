@@ -1,5 +1,4 @@
 // This #include statement was automatically added by the Particle IDE.
-#include <OneWire.h>
 #include <DS18.h>
 
 DS18 sensor(D5);
@@ -74,7 +73,10 @@ void sendData(){//Send a message via Telegram
 }
 
 void reportTemp(){//Read from the temperature sensor and report via Telegram
+     bool success = sensor.read();
+     if(!success){
      sensor.read();
+     }
      Particle.publish("Temp", String(sensor.fahrenheit()));
      Particle.publish("Boron2Telegram", "Temp: " + String(sensor.fahrenheit()), PRIVATE);
 }
