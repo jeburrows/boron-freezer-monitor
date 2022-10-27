@@ -6,9 +6,13 @@ String alert1;
 bool onUSB = false;
 bool onBattery = false;
 bool lowBattery = false;
-unsigned long pwrCheckTimeStart;//Check power every 10sec
+bool doorState = false;
+const int reedPin = 7;
+unsigned long checkTimer;//Check power every 10sec
 
 void setup() {
+    //Reed switch setup
+    pinMode(reedPin, INPUT_PULLUP);
     //Initial power check
     int powerSource = System.powerSource();
     if (powerSource == POWER_SOURCE_BATTERY) {//On battery power
@@ -28,13 +32,19 @@ void setup() {
          sendData();        
     }
     
-    pwrCheckTimeStart = millis();
+    checkTimer = millis();
 }
 
 void loop() {
   //Power check loop
-  if(millis()-pwrCheckTimeStart>10000){
-    pwrCheckTimeStart = millis();
+    if(millis()-checkTimer>10000){
+    doorState = digitalRead(reedPin); //Read door state
+    if (doorState){
+          Particle.publish("Door", "The door is open");
+    } else {
+          Particle.publish("Door", "The door is closed");
+    }
+    checkTimer = millis();
     int powerSource = System.powerSource();
     if (powerSource == POWER_SOURCE_BATTERY) {//On battery power
         if(!onBattery && onUSB){//Changed from USB power to battery power
@@ -49,7 +59,7 @@ void loop() {
         alert1 = "AC power is back on";
         sendData();
     }
-    if (!onUSB){
+    if (onBattery){
         reportTemp();
     }
     //Check battery voltage 
@@ -73,10 +83,10 @@ void sendData(){//Send a message via Telegram
 }
 
 void reportTemp(){//Read from the temperature sensor and report via Telegram
-     bool success = sensor.read();
-     if(!success){
-     sensor.read();
-     }
-     Particle.publish("Temp", String(sensor.fahrenheit()));
-     Particle.publish("Boron2Telegram", "Temp: " + String(sensor.fahrenheit()), PRIVATE);
+    bool success = sensor.read();
+    if(!success){
+        sensor.read();
+    }
+    Particle.publish("Temp", String(sensor.fahrenheit()));
+    Particle.publish("Boron2Telegram", "Temp: " + String(sensor.fahrenheit()), PRIVATE);
 }
