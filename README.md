@@ -23,4 +23,4 @@ Using a [Particle Boron](https://store.particle.io/collections/boron-lte/product
 - Lithium Ion Battery
 - 3D Printed Case
 
-![Fritzing](https://blog.burrows.family/images/Boron_Freezer_Monitor_Fritzing.png)
+![Fritzing](https://blog.burrows.family/images/Fritzing_Boron_Freezer_Monitor.png)
