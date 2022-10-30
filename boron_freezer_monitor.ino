@@ -8,7 +8,12 @@ bool onBattery = false;
 bool lowBattery = false;
 bool doorState = false;
 const int reedPin = 7;
-unsigned long checkTimer;//Check power every 10sec
+const long powerTimer = 10000;
+const long doorTimer = 60000;
+const long tempTimer = 300000;
+unsigned long powerDelay = 0;
+unsigned long doorDelay = 0;
+unsigned long tempDelay = 0;
 
 void setup() {
     //Reed switch setup
@@ -25,42 +30,55 @@ void setup() {
     }
     
     if(onBattery){//Bootup power source alert
-         alert1 = "Battery powered";
-         sendData();
+        alert1 = "Battery powered";
+        Particle.publish("Power", alert1);
+        Particle.publish("Boron2Telegram", alert1, PRIVATE);
     }else{
-         alert1 = "AC powered";
-         sendData();        
+        alert1 = "AC powered";
+        Particle.publish("Power", alert1);
+        Particle.publish("Boron2Telegram", alert1, PRIVATE);     
     }
-    
-    checkTimer = millis();
 }
 
-void loop() {
-  //Power check loop
-    if(millis()-checkTimer>10000){
-    doorState = digitalRead(reedPin); //Read door state
-    if (doorState){
-          Particle.publish("Door", "The door is open");
-    } else {
-          Particle.publish("Door", "The door is closed");
+void loop() {//Status check loop
+    //Timer
+    unsigned long currentTime = millis();
+    
+    //Read power state
+    if (currentTime - powerDelay >= powerTimer) {
+        reportPower();
+        powerDelay = currentTime;
     }
-    checkTimer = millis();
+    
+    //Read the door state
+    if (currentTime - doorDelay >= doorTimer) {
+        reportDoor();
+        doorDelay = currentTime;
+    }
+    
+    //Read the temperature sensor
+    if (currentTime - tempDelay >= tempTimer) {
+        reportTemp();
+        tempDelay = currentTime;
+    }
+}
+
+void reportPower(){//Send a message via Telegram
     int powerSource = System.powerSource();
     if (powerSource == POWER_SOURCE_BATTERY) {//On battery power
         if(!onBattery && onUSB){//Changed from USB power to battery power
-         onBattery = true;
-         onUSB = false;
-         alert1 = "AC power lost!";
-         sendData();
+            onBattery = true;
+            onUSB = false;
+            alert1 = "AC power lost!";
+            Particle.publish("Power", alert1);
+            Particle.publish("Boron2Telegram", alert1, PRIVATE);
         }
     }else if(onBattery && !onUSB){//Changed from battery power to USB power
-        onBattery = false;
-        onUSB = true;
-        alert1 = "AC power is back on";
-        sendData();
-    }
-    if (onBattery){
-        reportTemp();
+            onBattery = false;
+            onUSB = true;
+            alert1 = "AC power is back on";
+            Particle.publish("Power", alert1);
+            Particle.publish("Boron2Telegram", alert1, PRIVATE);
     }
     //Check battery voltage 
     FuelGauge fuel;
@@ -69,24 +87,35 @@ void loop() {
         if(!lowBattery){
             lowBattery=true;
             alert1 = "Low battery!";
-            sendData();
+            reportPower();
         }
     }else if(batteryVoltage>3.7){//Message spamming prevention
         lowBattery=false;
     }
-  }
 }
 
-void sendData(){//Send a message via Telegram
-     unsigned long startConnectTime = millis();
-     Particle.publish("Boron2Telegram", alert1, PRIVATE);
-}
-
-void reportTemp(){//Read from the temperature sensor and report via Telegram
-    bool success = sensor.read();
-    if(!success){
-        sensor.read();
+void reportDoor(){//Read from the door sensor and report via Telegram if the door is open
+    doorState = digitalRead(reedPin);
+    if (doorState){
+        Particle.publish("Door", "The door is open!");
+        Particle.publish("Boron2Telegram", "The door is open!", PRIVATE);
     }
-    Particle.publish("Temp", String(sensor.fahrenheit()));
-    Particle.publish("Boron2Telegram", "Temp: " + String(sensor.fahrenheit()), PRIVATE);
+    else {
+        Particle.publish("Door", "The door is closed");
+    }
+}
+
+void reportTemp(){//Read from the temperature sensor and report via Telegram if the temperature is too high
+    bool success = sensor.read();
+    if(!success){//If reading the temperature sensor fails...
+        sensor.read(); //try again
+    }
+    float tempSensor = sensor.fahrenheit();
+    if (tempSensor > 70){//Change the temp to your desired freezer temp (ie. 32)
+        Particle.publish("Temp", String(sensor.fahrenheit()));
+        Particle.publish("Boron2Telegram", "Temp: " + String(sensor.fahrenheit()), PRIVATE);
+    }
+    else {
+        Particle.publish("Temp", String(sensor.fahrenheit()));
+    }
 }
