@@ -8,6 +8,7 @@ bool onBattery = false;
 bool lowBattery = false;
 bool doorState = false;
 const int reedPin = 7;
+const int tempThreshold = 70; //Set high for testing. Change to freezer temp when installed.
 const long powerTimer = 10000;
 const long doorTimer = 60000;
 const long tempTimer = 300000;
@@ -111,7 +112,7 @@ void reportTemp(){//Read from the temperature sensor and report via Telegram if 
         sensor.read(); //try again
     }
     float tempSensor = sensor.fahrenheit();
-    if (tempSensor > 70){//Change the temp to your desired freezer temp (ie. 32)
+    if (tempSensor > tempThreshold){//Change the temp to your desired freezer temp (ie. 32)
         Particle.publish("Temp", String(sensor.fahrenheit()));
         Particle.publish("Boron2Telegram", "Temp: " + String(sensor.fahrenheit()), PRIVATE);
     }
