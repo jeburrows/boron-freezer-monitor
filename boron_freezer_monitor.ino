@@ -3,7 +3,7 @@
 
 DS18 sensor(D5);
 String alert1;
-String eventName = "Boron2Telegram";
+String eventName = ""; //Enter your Particle Webhook event name here.
 bool onUSB = false;
 bool onBattery = false;
 bool lowBattery = false;
