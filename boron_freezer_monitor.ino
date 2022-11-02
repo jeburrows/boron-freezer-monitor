@@ -3,6 +3,7 @@
 
 DS18 sensor(D5);
 String alert1;
+String eventName = "Boron2Telegram";
 bool onUSB = false;
 bool onBattery = false;
 bool lowBattery = false;
@@ -33,11 +34,11 @@ void setup() {
     if(onBattery){//Bootup power source alert
         alert1 = "Battery powered";
         Particle.publish("Power", alert1);
-        Particle.publish("Boron2Telegram", alert1, PRIVATE);
+        Particle.publish(eventName, alert1, PRIVATE);
     }else{
         alert1 = "AC powered";
         Particle.publish("Power", alert1);
-        Particle.publish("Boron2Telegram", alert1, PRIVATE);     
+        Particle.publish(eventName, alert1, PRIVATE);     
     }
 }
 
@@ -72,14 +73,14 @@ void reportPower(){//Send a message via Telegram
             onUSB = false;
             alert1 = "AC power lost!";
             Particle.publish("Power", alert1);
-            Particle.publish("Boron2Telegram", alert1, PRIVATE);
+            Particle.publish(eventName, alert1, PRIVATE);
         }
     }else if(onBattery && !onUSB){//Changed from battery power to USB power
             onBattery = false;
             onUSB = true;
             alert1 = "AC power is back on";
             Particle.publish("Power", alert1);
-            Particle.publish("Boron2Telegram", alert1, PRIVATE);
+            Particle.publish(eventName, alert1, PRIVATE);
     }
     //Check battery voltage 
     FuelGauge fuel;
@@ -99,7 +100,7 @@ void reportDoor(){//Read from the door sensor and report via Telegram if the doo
     doorState = digitalRead(reedPin);
     if (doorState){
         Particle.publish("Door", "The door is open!");
-        Particle.publish("Boron2Telegram", "The door is open!", PRIVATE);
+        Particle.publish(eventName, "The door is open!", PRIVATE);
     }
     else {
         Particle.publish("Door", "The door is closed");
@@ -114,7 +115,7 @@ void reportTemp(){//Read from the temperature sensor and report via Telegram if 
     float tempSensor = sensor.fahrenheit();
     if (tempSensor > tempThreshold){//Change the temp to your desired freezer temp (ie. 32)
         Particle.publish("Temp", String(sensor.fahrenheit()));
-        Particle.publish("Boron2Telegram", "Temp: " + String(sensor.fahrenheit()), PRIVATE);
+        Particle.publish(eventName, "Temp: " + String(sensor.fahrenheit()), PRIVATE);
     }
     else {
         Particle.publish("Temp", String(sensor.fahrenheit()));
